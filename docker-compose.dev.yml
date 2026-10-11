@@ -1,0 +1,21 @@
+# Local development stack: bridge + mock paperless-ngx API that logs uploads.
+#   docker compose -f docker-compose.dev.yml up --build
+#   go run ./cmd/sendtest -addr localhost:2525 some.pdf
+services:
+  mockpaperless:
+    image: golang:1.27.2-alpine
+    working_dir: /src
+    volumes: [".:/src"]
+    command: go run ./cmd/mockpaperless -token dev-token
+    ports: ["8000:8000"]
+
+  smtp2paperless:
+    build: .
+    depends_on: [mockpaperless]
+    ports:
+      - "2525:2525"
+      - "9090:9090"
+    environment:
+      PAPERLESS_URL: http://mockpaperless:8000
+      PAPERLESS_TOKEN: dev-token
+      LOG_LEVEL: debug

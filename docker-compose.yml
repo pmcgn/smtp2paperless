@@ -1,0 +1,15 @@
+# Production-style example: the bridge in front of an existing paperless-ngx.
+# For local development without a real paperless-ngx see docker-compose.dev.yml.
+services:
+  smtp2paperless:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "25:2525"     # SMTP (point the scanner here)
+      - "9090:9090"   # Prometheus metrics
+    environment:
+      PAPERLESS_URL: http://paperless:8000
+      PAPERLESS_TOKEN: ${PAPERLESS_TOKEN:?set PAPERLESS_TOKEN}
+      ATTACHMENT_WHITELIST: ${ATTACHMENT_WHITELIST:-tiff,pdf,jpg}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: json
