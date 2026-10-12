@@ -1,0 +1,69 @@
+# Test stack: real paperless-ngx + smtp2paperless, fully preconfigured.
+#   docker compose -f docker-compose.paperless.yml up --build
+#   go run ./cmd/sendtest -addr localhost:2525 some.pdf
+# paperless-ngx UI: http://localhost:8000  (admin / admin)
+# Testing only: all credentials are hard-coded. Reset with `down -v`.
+services:
+  redis:
+    image: docker.io/library/redis:7-alpine
+    restart: unless-stopped
+
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on: [redis]
+    ports: ["8000:8000"]
+    volumes:
+      - paperless-data:/usr/src/paperless/data
+      - paperless-media:/usr/src/paperless/media
+    environment:
+      PAPERLESS_REDIS: redis://redis:6379
+      # No PAPERLESS_DBHOST: SQLite in the data volume, good enough for testing.
+      PAPERLESS_URL: http://localhost:8000
+      PAPERLESS_SECRET_KEY: insecure-test-secret-key
+      PAPERLESS_ADMIN_USER: admin
+      PAPERLESS_ADMIN_PASSWORD: admin
+      PAPERLESS_ADMIN_MAIL: admin@example.com
+      PAPERLESS_TIME_ZONE: Europe/Berlin
+      PAPERLESS_OCR_LANGUAGE: deu+eng
+      PAPERLESS_TASK_WORKERS: 1
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-o", "/dev/null", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  # One-shot: fetches the admin's API token (created on first request) into a
+  # shared volume so smtp2paperless can read it via PAPERLESS_TOKEN_FILE.
+  paperless-token:
+    image: docker.io/curlimages/curl:latest
+    user: "0"
+    depends_on:
+      paperless: { condition: service_healthy }
+    volumes: ["paperless-token:/token"]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        curl -fsS -X POST -d username=admin -d password=admin http://paperless:8000/api/token/
+        | sed -n 's/.*"token":"\([^"]*\)".*/\1/p' > /token/token
+        && test -s /token/token && chmod 644 /token/token && echo "token written"
+
+  smtp2paperless:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      paperless-token: { condition: service_completed_successfully }
+    ports:
+      - "25:2525"
+      - "9090:9090"
+    volumes: ["paperless-token:/token:ro"]
+    environment:
+      PAPERLESS_URL: http://paperless:8000
+      PAPERLESS_TOKEN_FILE: /token/token
+      LOG_LEVEL: debug
+
+volumes:
+  paperless-data:
+  paperless-media:
+  paperless-token:

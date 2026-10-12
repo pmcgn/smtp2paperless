@@ -70,3 +70,6 @@ go test ./...
 ```
 
 Or all in Docker: `docker compose -f docker-compose.dev.yml up --build`.
+
+Against a real, preconfigured paperless-ngx (UI on http://localhost:8000, login `admin`/`admin`,
+API token provisioned automatically): `docker compose -f docker-compose.paperless.yml up --build`.
