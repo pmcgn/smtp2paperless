@@ -16,6 +16,7 @@ No TLS and no authentication: run it only on a trusted network segment.
 | `PAPERLESS_TAGS` | – | Comma separated tag IDs added to each document |
 | `PAPERLESS_CORRESPONDENT` | – | Correspondent ID |
 | `PAPERLESS_DOCUMENT_TYPE` | – | Document type ID |
+| `PAPERLESS_CUSTOM_PATH` | `/api/documents/post_document/` | HTTP path (appended to `PAPERLESS_URL`) the document is POSTed to, for non-paperless-ngx targets. The leading `/` is recommended but not required – one is added if missing. Include any query string as part of the value |
 | `PAPERLESS_HTTP_TIMEOUT` | `60s` | Per-request timeout |
 | `PAPERLESS_UPLOAD_RETRIES` | `3` | Extra attempts on network errors / 5xx / 429 |
 | `ATTACHMENT_WHITELIST` | `tiff,pdf,jpg` | Extensions to upload (`jpeg`≡`jpg`, `tif`≡`tiff`) |

@@ -23,7 +23,11 @@ type Options struct {
 	Tags          []string // tag IDs
 	Correspondent string   // correspondent ID
 	DocumentType  string   // document type ID
+	Path          string   // upload path appended to the base URL; empty = DefaultPath
 }
+
+// DefaultPath is the paperless-ngx document upload endpoint.
+const DefaultPath = "/api/documents/post_document/"
 
 // Observer receives request outcomes; used for metrics. May be nil.
 type Observer interface {
@@ -44,6 +48,12 @@ type Client struct {
 
 // New creates a client. retries is the number of additional attempts after the first.
 func New(baseURL, token string, timeout time.Duration, retries int, opts Options, obs Observer, log *slog.Logger) *Client {
+	opts.Path = strings.TrimSpace(opts.Path)
+	if opts.Path == "" {
+		opts.Path = DefaultPath
+	} else if !strings.HasPrefix(opts.Path, "/") {
+		opts.Path = "/" + opts.Path
+	}
 	return &Client{
 		baseURL: strings.TrimRight(baseURL, "/"),
 		token:   token,
@@ -56,7 +66,8 @@ func New(baseURL, token string, timeout time.Duration, retries int, opts Options
 	}
 }
 
-// Upload posts a document to /api/documents/post_document/ and returns the
+// Upload posts a document to the configured upload path (default
+// /api/documents/post_document/) and returns the
 // consumption task ID reported by paperless-ngx.
 func (c *Client) Upload(ctx context.Context, filename, contentType string, data []byte) (string, error) {
 	body, ctHeaderValue, err := c.buildBody(filename, contentType, data)
@@ -131,7 +142,7 @@ func (c *Client) buildBody(filename, contentType string, data []byte) ([]byte, s
 
 // post performs a single request. retryable is true for transient failures.
 func (c *Client) post(ctx context.Context, body []byte, contentType string) (task string, retryable bool, err error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/api/documents/post_document/", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+c.opts.Path, bytes.NewReader(body))
 	if err != nil {
 		return "", false, err
 	}

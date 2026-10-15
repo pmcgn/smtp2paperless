@@ -53,7 +53,7 @@ func run() error {
 
 	m := metrics.New()
 	client := paperless.New(cfg.PaperlessURL, cfg.PaperlessToken, cfg.HTTPTimeout, cfg.UploadRetries,
-		paperless.Options{Tags: cfg.Tags, Correspondent: cfg.Correspondent, DocumentType: cfg.DocumentType}, m, log)
+		paperless.Options{Tags: cfg.Tags, Correspondent: cfg.Correspondent, DocumentType: cfg.DocumentType, Path: cfg.CustomPath}, m, log)
 
 	smtpSrv := smtpserver.New(smtpserver.Options{
 		Addr:      fmt.Sprintf(":%d", cfg.SMTPPort),

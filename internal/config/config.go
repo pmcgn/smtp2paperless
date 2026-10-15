@@ -25,6 +25,7 @@ type Config struct {
 	Tags           []string
 	Correspondent  string
 	DocumentType   string
+	CustomPath     string // PAPERLESS_CUSTOM_PATH; empty = paperless-ngx default
 	HTTPTimeout    time.Duration
 	UploadRetries  int
 	MetricsPort    int
@@ -74,6 +75,7 @@ func Load() (*Config, error) {
 		PaperlessURL:  strings.TrimRight(os.Getenv("PAPERLESS_URL"), "/"),
 		Correspondent: os.Getenv("PAPERLESS_CORRESPONDENT"),
 		DocumentType:  os.Getenv("PAPERLESS_DOCUMENT_TYPE"),
+		CustomPath:    strings.TrimSpace(os.Getenv("PAPERLESS_CUSTOM_PATH")),
 	}
 
 	var errs []string
